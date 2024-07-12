@@ -70,6 +70,26 @@ public class StudentController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //Todo: Get Student Details
+        var studentDto = new StudentDto();
+        var studentId = req.getParameter("id");
+        try (var writer = resp.getWriter()){
+            var preparedStatement = connection.prepareStatement(GET_STUDENT);
+            preparedStatement.setString(1,studentId);
+            var resultSet = preparedStatement.executeQuery();
+            while(resultSet.next()){
+                studentDto.setId(resultSet.getString("id"));
+                studentDto.setName(resultSet.getString("name"));
+                studentDto.setCity(resultSet.getString("city"));
+                studentDto.setEmail(resultSet.getString("email"));
+                studentDto.setLevel(resultSet.getString("level"));
+            }
+            System.out.println(studentDto);
+            resp.setContentType("application/json");
+            var jsonb = JsonbBuilder.create();
+            jsonb.toJson(studentDto,resp.getWriter());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
