@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 @WebServlet(urlPatterns = "")
 public class StudentController extends HttpServlet {
@@ -16,6 +18,20 @@ public class StudentController extends HttpServlet {
     static String SAVE_STUDENT = "INSERT INTO student VALUES(?,?,?,?,?)";
     static String GET_STUDENT = "SELECT * FROM student WHERE id = ?";
 
+    @Override
+    public void init() throws ServletException {
+        try{
+            var driver = getServletContext().getInitParameter("driver-class");
+            var dbUrl = getServletContext().getInitParameter("dbURL");
+            var userName = getServletContext().getInitParameter("dbUsername");
+            var password = getServletContext().getInitParameter("dbPassword");
+            Class.forName(driver);
+            this.connection = DriverManager.getConnection(dbUrl,userName,password);
+        }catch (ClassNotFoundException | SQLException e){
+            e.printStackTrace();
+        }
+
+    }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
