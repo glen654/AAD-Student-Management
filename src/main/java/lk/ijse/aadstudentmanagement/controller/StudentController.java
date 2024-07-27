@@ -46,7 +46,7 @@ public class StudentController extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //Todo: Save Student
         if(!req.getContentType().toLowerCase().startsWith("application/json") || req.getContentType() == null){
-            resp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         }
         try(var writer = resp.getWriter()) {
             Jsonb jsonb = JsonbBuilder.create();
@@ -86,6 +86,25 @@ public class StudentController extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //Todo: Update Student
+        if(!req.getContentType().toLowerCase().startsWith("application/json") || req.getContentType() == null){
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
+        try(var writer = resp.getWriter()){
+            var studentId = req.getParameter("id");
+            Jsonb jsonb = JsonbBuilder.create();
+            var studentDao = new StudentDaoImpl();
+            var updateStudent = jsonb.fromJson(req.getReader(), StudentDto.class);
+            if(studentDao.updateStudent(studentId,updateStudent,connection)){
+                resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            }else{
+                writer.write("Update Failed");
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            }
+        }catch (JsonException e){
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
+        }
+
 
     }
 
