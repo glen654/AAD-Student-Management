@@ -54,6 +54,15 @@ public class StudentDaoImpl implements StudentDao {
 
     @Override
     public boolean updateStudent(String studentId, StudentDto studentDto, Connection connection) {
-        return false;
+        try {
+            var preparedStatement = connection.prepareStatement(UPDATE_STUDENT);
+            preparedStatement.setString(1,studentDto.getName());
+            preparedStatement.setString(2,studentDto.getCity());
+            preparedStatement.setString(3,studentDto.getEmail());
+            preparedStatement.setString(4,studentDto.getLevel());
+            return preparedStatement.executeUpdate() != 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
