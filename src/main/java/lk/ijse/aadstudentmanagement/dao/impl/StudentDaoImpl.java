@@ -49,7 +49,13 @@ public class StudentDaoImpl implements StudentDao {
 
     @Override
     public boolean deleteStudent(String studentId, Connection connection) {
-        return false;
+        try {
+            var preparedStatement = connection.prepareStatement(DELETE_STUDENT);
+            preparedStatement.setString(1,studentId);
+            return preparedStatement.executeUpdate() != 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
