@@ -8,6 +8,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lk.ijse.aadstudentmanagement.dao.impl.StudentDaoImpl;
 import lk.ijse.aadstudentmanagement.dto.StudentDto;
 
 import java.io.IOException;
@@ -19,8 +20,10 @@ import java.util.UUID;
 @WebServlet(urlPatterns = "")
 public class StudentController extends HttpServlet {
     Connection connection;
-    static String SAVE_STUDENT = "INSERT INTO student VALUES(?,?,?,?,?)";
-    static String GET_STUDENT = "SELECT * FROM student WHERE id = ?";
+    static String SAVE_STUDENT = "INSERT INTO student (id,name,city,email,level) VALUES (?,?,?,?,?)";
+    static String GET_STUDENT = "SELECT * FROM student WHERE id=?";
+    static String UPDATE_STUDENT = "UPDATE student SET name=?,city=?,email=?,level=? WHERE id=?";
+    static String DELETE_STUDENT = "DELETE FROM student WHERE id=?";
 
     @Override
     public void init() throws ServletException {
@@ -70,23 +73,14 @@ public class StudentController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //Todo: Get Student Details
-        var studentDto = new StudentDto();
         var studentId = req.getParameter("id");
-        try (var writer = resp.getWriter()){
-            var preparedStatement = connection.prepareStatement(GET_STUDENT);
-            preparedStatement.setString(1,studentId);
-            var resultSet = preparedStatement.executeQuery();
-            while(resultSet.next()){
-                studentDto.setId(resultSet.getString("id"));
-                studentDto.setName(resultSet.getString("name"));
-                studentDto.setCity(resultSet.getString("city"));
-                studentDto.setEmail(resultSet.getString("email"));
-                studentDto.setLevel(resultSet.getString("level"));
-            }
-            System.out.println(studentDto);
+        var studentDao = new StudentDaoImpl();
+        try(var writer = resp.getWriter()) {
+            var student = studentDao.getStudent(studentId,connection);
+            System.out.println(student);
             resp.setContentType("application/json");
             var jsonb = JsonbBuilder.create();
-            jsonb.toJson(studentDto,resp.getWriter());
+            jsonb.toJson(student,writer);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
