@@ -22,10 +22,6 @@ import java.util.UUID;
 @WebServlet(urlPatterns = "")
 public class StudentController extends HttpServlet {
     Connection connection;
-    static String SAVE_STUDENT = "INSERT INTO student (id,name,city,email,level) VALUES (?,?,?,?,?)";
-    static String GET_STUDENT = "SELECT * FROM student WHERE id=?";
-    static String UPDATE_STUDENT = "UPDATE student SET name=?,city=?,email=?,level=? WHERE id=?";
-    static String DELETE_STUDENT = "DELETE FROM student WHERE id=?";
 
     @Override
     public void init() throws ServletException {
@@ -111,5 +107,18 @@ public class StudentController extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //Todo: Delete Student
+        var studentId = req.getParameter("id");
+        try(var writer = resp.getWriter()){
+            var studentDao = new StudentDaoImpl();
+            if(studentDao.deleteStudent(studentId,connection)){
+                resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            }else{
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                writer.write("Delete failed");
+            }
+        }catch (Exception e){
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            throw new RuntimeException(e);
+        }
     }
 }
