@@ -1,6 +1,7 @@
 package lk.ijse.aadstudentmanagement.controller;
 
 
+import jakarta.json.JsonException;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.servlet.ServletException;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lk.ijse.aadstudentmanagement.dao.impl.StudentDaoImpl;
 import lk.ijse.aadstudentmanagement.dto.StudentDto;
+import lk.ijse.aadstudentmanagement.util.UtilProcess;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -46,28 +48,23 @@ public class StudentController extends HttpServlet {
         if(!req.getContentType().toLowerCase().startsWith("application/json") || req.getContentType() == null){
             resp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
         }
-        String id = UUID.randomUUID().toString();
-        Jsonb jsonb = JsonbBuilder.create();// This is the entry point Building a JSON b type object
-        StudentDto studentDto = jsonb.fromJson(req.getReader(), StudentDto.class);// Read the JSON by get reader method and bind to student dto class
-        studentDto.setId(id);
-        System.out.println(studentDto);
-
-        try {
-            var preparedStatement = connection.prepareStatement(SAVE_STUDENT);
-            preparedStatement.setString(1,studentDto.getId());
-            preparedStatement.setString(2,studentDto.getName());
-            preparedStatement.setString(3,studentDto.getCity());
-            preparedStatement.setString(4,studentDto.getEmail());
-            preparedStatement.setString(5,studentDto.getLevel());
-
-            if(preparedStatement.executeUpdate() != 0){
-                resp.getWriter().write("Student Saved");
+        try(var writer = resp.getWriter()) {
+            Jsonb jsonb = JsonbBuilder.create();
+            StudentDto studentDto = jsonb.fromJson(req.getReader(),StudentDto.class);
+            studentDto.setId(UtilProcess.generateId());
+            var studentDao = new StudentDaoImpl();
+            if(studentDao.saveStudent(studentDto,connection)){
+                writer.write("Save student Successfully");
+                resp.setStatus(HttpServletResponse.SC_CREATED);
             }else{
-                resp.getWriter().write("Student Not Saved");
+                writer.write("Save student failed");
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             }
-        } catch (SQLException e) {
+        }catch (JsonException e){
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             throw new RuntimeException(e);
         }
+
     }
 
     @Override
