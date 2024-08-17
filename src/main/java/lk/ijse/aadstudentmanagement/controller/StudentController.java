@@ -41,6 +41,7 @@ public class StudentController extends HttpServlet {
             DataSource pool = (DataSource) ctx.lookup("java:comp/env/jdbc/studentRegistration");
             this.connection = pool.getConnection();
         }catch (NamingException | SQLException e){
+            logger.error("Init failed with", e.getMessage());
             e.printStackTrace();
         }
 
@@ -48,6 +49,7 @@ public class StudentController extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        logger.debug("Call doPost method");
         //Todo: Save Student
         if(!req.getContentType().toLowerCase().startsWith("application/json") || req.getContentType() == null){
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);//this is the worse-case secenario not the happy path
