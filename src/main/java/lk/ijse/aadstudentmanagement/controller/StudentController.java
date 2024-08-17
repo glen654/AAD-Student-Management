@@ -12,27 +12,35 @@ import jakarta.servlet.http.HttpServletResponse;
 import lk.ijse.aadstudentmanagement.dao.impl.StudentDaoImpl;
 import lk.ijse.aadstudentmanagement.dto.StudentDto;
 import lk.ijse.aadstudentmanagement.util.UtilProcess;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.UUID;
 
-@WebServlet(urlPatterns = "")
+@WebServlet(urlPatterns = "/student", loadOnStartup = 2)
 public class StudentController extends HttpServlet {
+    static Logger logger = LoggerFactory.getLogger(StudentController.class);//adding student controller for logging
     Connection connection;
 
     @Override
     public void init() throws ServletException {
+        logger.info("Initializing StudentController with call init method");// applying the log for the student controller
         try{
-            var driver = getServletContext().getInitParameter("driver-class");
+            /*var driver = getServletContext().getInitParameter("driver-class");
             var dbUrl = getServletContext().getInitParameter("dbURL");
             var userName = getServletContext().getInitParameter("dbUsername");
-            var password = getServletContext().getInitParameter("dbPassword");
-            Class.forName(driver);
-            this.connection = DriverManager.getConnection(dbUrl,userName,password);
-        }catch (ClassNotFoundException | SQLException e){
+            var password = getServletContext().getInitParameter("dbPassword");*/
+
+            var ctx = new InitialContext();
+            DataSource pool = (DataSource) ctx.lookup("java:comp/env/jdbc/studentRegistration");
+            this.connection = pool.getConnection();
+        }catch (NamingException | SQLException e){
             e.printStackTrace();
         }
 
@@ -42,10 +50,13 @@ public class StudentController extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //Todo: Save Student
         if(!req.getContentType().toLowerCase().startsWith("application/json") || req.getContentType() == null){
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);//this is the worse-case secenario not the happy path
         }
         try(var writer = resp.getWriter()) {
-            Jsonb jsonb = JsonbBuilder.create();
+            //This process calls deserialization
+            Jsonb jsonb = JsonbBuilder.create();//create a jsonb type object
+            //bind the student dto properties to the json object req.getReader look and
+            // get the request and bind to the dto class
             StudentDto studentDto = jsonb.fromJson(req.getReader(),StudentDto.class);
             studentDto.setId(UtilProcess.generateId());
             var studentDao = new StudentDaoImpl();
@@ -72,7 +83,9 @@ public class StudentController extends HttpServlet {
             var student = studentDao.getStudent(studentId,connection);
             System.out.println(student);
             resp.setContentType("application/json");
+            //This is serialization
             var jsonb = JsonbBuilder.create();
+            //Bind java object properties to the json object properties
             jsonb.toJson(student,writer);
         } catch (SQLException e) {
             throw new RuntimeException(e);

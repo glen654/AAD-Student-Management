@@ -13,5 +13,4 @@ public class StudentDto implements Serializable {
     private String name;
     private String city;
     private String email;
-    private String level;
 }
